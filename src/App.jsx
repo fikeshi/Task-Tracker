@@ -11,38 +11,80 @@ function App() {
   const [tasks, setTasks] = useState([
   ])
 
-  useEffect(()=>{
-     
+  useEffect(() => {
+    async function getTasks() {
+      const tasksFromServer = await fetchTasks()
+      setTasks(tasksFromServer)
+    }
+    getTasks()
 
-    fetchTasks()
-    
   }, [])
 
-  // FetchTask
+  // FetchTasks
   async function fetchTasks() {
     const res = await fetch("http://localhost:5000/tasks")
     const data = await res.json()
-
+    return data
+    console.log(data)
+  }
+  // fetch task
+  async function fetchTask(id) {
+    const res = await fetch(`http://localhost:5000/tasks/${id}`)
+    const data = await res.json()
     return data
   }
 
 
   // Add Task
-  function addTask(task) {
-    const id = Math.floor(Math.random() * 10000) + 1
-    const newTask = { id, ...task }
-    console.log(newTask)
-    setTasks([...tasks, newTask])
+  async function addTask(task) {
+    const res = await fetch("http://localhost:5000/tasks", {
+      method: "POST",
+      headers: {
+        "Content-type": " application/json"
+      },
+      body: JSON.stringify(task)
+    })
+
+    const data = await res.json()
+
+
+    setTasks([...tasks, data])
+
+    // const id = Math.floor(Math.random() * 10000) + 1
+    // const newTask = { id, ...task }
+    // console.log(newTask)
+    // setTasks([...tasks, newTask])
   }
 
   // del task
-  function del(id) {
+  async function del(id) {
+    await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: "DELETE"
+    })
+
+
+
     setTasks(tasks.filter((tasks) => tasks.id !== id))
   }
 
   // toggleReminder
-  function toggleReminder(id) {
-    setTasks(tasks.map((task) => task.id === id ? { ...task, reminder: !task.reminder } : task))
+  async function toggleReminder(id) {
+
+    const taskToToggle = await fetchTask(id)
+    const updateTask={...taskToToggle, reminder:!taskToToggle.reminder}
+
+    const res = await fetch(`http://localhost:5000/tasks/${id}`,{
+      method:"PUT",
+      headers:{
+        "COntent-type":"application/Json"
+      },
+      body:JSON.stringify(updateTask)
+    })
+
+    const data = await res.json()
+
+
+    setTasks(tasks.map((task) => task.id === id ? { ...task, reminder: data.reminder } : task))
   }
 
 
@@ -55,7 +97,7 @@ function App() {
 
         {tasks.length > 0 ? <Tasks task={tasks} onDelete={del} onToggle={toggleReminder} /> : "No task"}
         <Routes>
-            <Route path='/about' Component={About} />
+          <Route path='/about' Component={About} />
           <Route path='/' Component={Footer} />
         </Routes >
       </div>
